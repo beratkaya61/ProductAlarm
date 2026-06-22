@@ -1,0 +1,38 @@
+
+> product-alarm-backend@0.1.0 start
+> node dist/main.js
+
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[NestFactory] [39m[32mStarting Nest application...[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAppModule dependencies initialized[39m[38;5;3m +16ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDatabaseModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigHostModule dependencies initialized[39m[38;5;3m +2ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mDiscoveryModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScraperModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mAlarmModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mConfigModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mScheduleModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mJobsModule dependencies initialized[39m[38;5;3m +0ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[InstanceLoader] [39m[32mWhatsappModule dependencies initialized[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mWhatsappController {/api/whatsapp}:[39m[38;5;3m +45ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/whatsapp/status, GET} route[39m[38;5;3m +3ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/whatsapp/groups, GET} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mScraperController {/api/products}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/products/search, GET} route[39m[38;5;3m +2ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RoutesResolver] [39m[32mAlarmController {/api/alarms}:[39m[38;5;3m +0ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alarms, POST} route[39m[38;5;3m +1ms[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[RouterExplorer] [39m[32mMapped {/api/alarms, GET} route[39m[38;5;3m +0ms[39m
+[33m[Nest] 17656  - [39m22.06.2026 05:53:00 [33m   WARN[39m [38;5;3m[WhatsappService] [39m[33mWhatsApp client is disabled. Set WHATSAPP_ENABLED=true to start it.[39m
+[32m[Nest] 17656  - [39m22.06.2026 05:53:00 [32m    LOG[39m [38;5;3m[NestApplication] [39m[32mNest application successfully started[39m[38;5;3m +2ms[39m
+{"level":30,"time":1782096780907,"pid":17656,"hostname":"PRJ-BERAT","msg":"Server listening at http://127.0.0.1:5000"}
+{"level":30,"time":1782096780907,"pid":17656,"hostname":"PRJ-BERAT","msg":"Server listening at http://172.31.48.1:5000"}
+{"level":30,"time":1782096780907,"pid":17656,"hostname":"PRJ-BERAT","msg":"Server listening at http://192.168.56.1:5000"}
+{"level":30,"time":1782096780907,"pid":17656,"hostname":"PRJ-BERAT","msg":"Server listening at http://192.168.21.178:5000"}
+{"level":30,"time":1782096780907,"pid":17656,"hostname":"PRJ-BERAT","msg":"Server listening at http://172.30.0.1:5000"}
+{"level":30,"time":1782097328339,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-1","req":{"method":"GET","url":"/api/alarms","host":"localhost:5000","remoteAddress":"127.0.0.1","remotePort":62471},"msg":"incoming request"}
+{"level":30,"time":1782097328343,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-1","res":{"statusCode":200},"responseTime":4.556100010871887,"msg":"request completed"}
+{"level":30,"time":1782098666088,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-2","req":{"method":"GET","url":"/api/whatsapp/status","host":"localhost:5000","remoteAddress":"127.0.0.1","remotePort":63041},"msg":"incoming request"}
+{"level":30,"time":1782098666092,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-2","res":{"statusCode":200},"responseTime":3.733900010585785,"msg":"request completed"}
+{"level":30,"time":1782098666092,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-3","req":{"method":"GET","url":"/api/alarms","host":"localhost:5000","remoteAddress":"127.0.0.1","remotePort":63042},"msg":"incoming request"}
+{"level":30,"time":1782098666093,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-3","res":{"statusCode":200},"responseTime":0.40869998931884766,"msg":"request completed"}
+{"level":30,"time":1782100359830,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-4","req":{"method":"GET","url":"/api/whatsapp/status","host":"localhost:5000","remoteAddress":"127.0.0.1","remotePort":63704},"msg":"incoming request"}
+{"level":30,"time":1782100359831,"pid":17656,"hostname":"PRJ-BERAT","reqId":"req-4","res":{"statusCode":200},"responseTime":0.5472999811172485,"msg":"request completed"}
