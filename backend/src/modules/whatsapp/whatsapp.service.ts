@@ -153,4 +153,36 @@ export class WhatsappService implements OnModuleInit, OnApplicationShutdown {
     await this.client.sendMessage(chatId, message);
     return true;
   }
+
+  async disconnect(): Promise<void> {
+    if (!this.client) {
+      return;
+    }
+
+    try {
+      this.logger.log('Disconnecting/Logging out WhatsApp client...');
+      await this.client.logout();
+      this.ready = false;
+      this.qrCodeDataUrl = null;
+      this.qrCodeGeneratedAt = null;
+    } catch (error) {
+      this.logger.warn(`WhatsApp disconnect failed: ${(error as Error).message}`);
+      // Fallback: client.destroy ve yeniden başlatma
+      try {
+        await this.client.destroy();
+      } catch (err) {}
+      
+      try {
+        const fs = require('node:fs');
+        fs.rmSync('.wwebjs_auth', { recursive: true, force: true });
+      } catch (e) {}
+
+      this.ready = false;
+      this.qrCodeDataUrl = null;
+      this.qrCodeGeneratedAt = null;
+
+      // Yeniden ayağa kaldır
+      this.onModuleInit();
+    }
+  }
 }

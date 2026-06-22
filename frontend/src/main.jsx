@@ -5,6 +5,7 @@ import {
   Check,
   CircleDollarSign,
   Loader2,
+  LogOut,
   Send,
   Smartphone,
   Trash2,
@@ -51,6 +52,18 @@ function App() {
   const canCreateAlarm = useMemo(() => {
     return selectedDevice && targetValue && selectedTargets.length > 0;
   }, [selectedDevice, targetValue, selectedTargets]);
+
+  const resultsBySource = useMemo(() => {
+    const grouped = {};
+    liveResults.forEach((product) => {
+      const src = product.source || 'Diger';
+      if (!grouped[src]) {
+        grouped[src] = [];
+      }
+      grouped[src].push(product);
+    });
+    return grouped;
+  }, [liveResults]);
 
   useEffect(() => {
     refreshData();
@@ -154,6 +167,20 @@ function App() {
     }
   }
 
+  async function handleDisconnectWhatsapp() {
+    if (!window.confirm('WhatsApp baglantisini koparmak istediginizden emin misiniz?')) {
+      return;
+    }
+    setNotice('WhatsApp baglantisi kesiliyor...');
+    try {
+      await request('/api/whatsapp/disconnect', { method: 'POST' });
+      setNotice('WhatsApp baglantisi kesildi. Yeni QR bekleniyor.');
+      await refreshData();
+    } catch {
+      setNotice('Baglanti kesilemedi.');
+    }
+  }
+
   return (
     <main className="app-shell">
       <section className="topbar">
@@ -181,6 +208,14 @@ function App() {
                 <Check size={30} />
                 <strong>Baglanti aktif</strong>
                 <span>Gruplar asagida listeleniyor.</span>
+                <button
+                  className="disconnect-action"
+                  onClick={handleDisconnectWhatsapp}
+                  type="button"
+                >
+                  <LogOut size={16} />
+                  Baglantiyi Kes
+                </button>
               </div>
             ) : qrCode.available ? (
               <>
@@ -289,25 +324,31 @@ function App() {
               )}
             </div>
 
-            <div className="product-grid catalog-products">
+            <div className="provider-groups">
               {liveResults.length === 0 && !isScraping ? (
                 <div className="empty-state">Bir cihaz secince guncel fiyatlar burada listelenir.</div>
               ) : (
-                liveResults.map((product) => (
-                  <a
-                    className="product-card"
-                    href={product.url}
-                    key={product.id}
-                    rel="noreferrer"
-                    target="_blank"
-                  >
-                    <span className="source">{product.source}</span>
-                    <strong>{product.name}</strong>
-                    <span className="price">{formatPrice(product.price)}</span>
-                    {product.previousPrice !== undefined && (
-                      <span className="muted">Onceki: {formatPrice(product.previousPrice)}</span>
-                    )}
-                  </a>
+                Object.entries(resultsBySource).map(([sourceName, products]) => (
+                  <div key={sourceName} className="provider-group">
+                    <h4 className="provider-group-title">{sourceName}</h4>
+                    <div className="product-grid catalog-products">
+                      {products.map((product) => (
+                        <a
+                          className="product-card"
+                          href={product.url}
+                          key={product.id}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <strong>{product.name}</strong>
+                          <span className="price">{formatPrice(product.price)}</span>
+                          {product.previousPrice !== undefined && (
+                            <span className="muted">Onceki: {formatPrice(product.previousPrice)}</span>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
                 ))
               )}
             </div>
@@ -358,32 +399,33 @@ function App() {
             )}
           </section>
         </section>
-      </section>
 
-      <section className="alarms-section">
-        <div className="panel-title">
-          <Bell size={18} />
-          <h2>Aktif alarmlar</h2>
-        </div>
-        <div className="alarm-list">
-          {alarms.length === 0 ? (
-            <div className="empty-state">Henuz alarm yok.</div>
-          ) : (
-            alarms.map((alarm) => (
-              <article className="alarm-row" key={alarm.id}>
-                <div>
-                  <strong>{alarm.productName}</strong>
-                  <span>{alarm.isActive ? 'Aktif' : 'Tetiklendi'}</span>
-                </div>
-                <div>
-                  <span>Baslangic: {formatPrice(alarm.initialPrice)}</span>
-                  <span>Guncel: {formatPrice(alarm.currentPrice)}</span>
-                </div>
-                <Trash2 size={18} />
-              </article>
-            ))
-          )}
-        </div>
+        {/* Sağ Panel: Aktif Alarmlar */}
+        <aside className="side-panel alarms-sidebar">
+          <div className="panel-title">
+            <Bell size={18} />
+            <h2>Aktif alarmlar</h2>
+          </div>
+          <div className="alarm-list">
+            {alarms.length === 0 ? (
+              <div className="empty-state">Henuz alarm yok.</div>
+            ) : (
+              alarms.map((alarm) => (
+                <article className="alarm-row" key={alarm.id}>
+                  <div>
+                    <strong>{alarm.productName}</strong>
+                    <span>{alarm.isActive ? 'Aktif' : 'Tetiklendi'}</span>
+                  </div>
+                  <div>
+                    <span>Baslangic: {formatPrice(alarm.initialPrice)}</span>
+                    <span>Guncel: {formatPrice(alarm.currentPrice)}</span>
+                  </div>
+                  <Trash2 size={18} />
+                </article>
+              ))
+            )}
+          </div>
+        </aside>
       </section>
     </main>
   );

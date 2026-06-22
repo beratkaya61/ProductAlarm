@@ -30,10 +30,9 @@ select {
 }
 
 .topbar,
-.layout-grid,
-.alarms-section {
-  width: min(1180px, 100%);
-  margin: 0 auto;
+.layout-grid {
+  width: 100%;
+  margin: 0;
 }
 
 .topbar {
@@ -111,7 +110,7 @@ h2 {
 
 .layout-grid {
   display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
+  grid-template-columns: 320px minmax(0, 1fr) 340px;
   gap: 20px;
 }
 
@@ -512,6 +511,107 @@ h2 {
   to {
     transform: rotate(360deg);
   }
+}
+
+.provider-groups {
+  display: grid;
+  gap: 24px;
+  max-height: 450px;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0b1220;
+}
+
+.provider-groups::-webkit-scrollbar {
+  width: 8px;
+}
+
+.provider-groups::-webkit-scrollbar-track {
+  background: #0b1220;
+  border-radius: 999px;
+}
+
+.provider-groups::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
+}
+
+.provider-group {
+  display: grid;
+  gap: 12px;
+}
+
+.provider-group-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #5eead4;
+  border-left: 3px solid #5eead4;
+  padding-left: 8px;
+  margin-bottom: 4px;
+}
+
+.provider-group .catalog-products {
+  max-height: none;
+  overflow-y: visible;
+  padding-right: 0;
+}
+
+.disconnect-action {
+  width: 100%;
+  min-height: 38px;
+  border-radius: 8px;
+  padding: 0 12px;
+  margin-top: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.22);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.disconnect-action:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.alarms-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: calc(100vh - 150px);
+  position: sticky;
+  top: 32px;
+}
+
+.alarms-sidebar .alarm-list {
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #334155 #0b1220;
+}
+
+.alarms-sidebar .alarm-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.alarms-sidebar .alarm-list::-webkit-scrollbar-track {
+  background: #0b1220;
+  border-radius: 999px;
+}
+
+.alarms-sidebar .alarm-list::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 999px;
 }
 
 @media (max-width: 820px) {

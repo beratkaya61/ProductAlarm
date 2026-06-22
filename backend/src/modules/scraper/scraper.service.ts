@@ -58,7 +58,9 @@ export class ScraperService {
       const $ = cheerio.load(response.data);
       const name = this.pickText($, provider?.selectors.productName ?? ['h1', '.product-name']);
       const priceText = this.pickText($, provider?.selectors.productPrice ?? ['.price', '.product-price']);
-      const price = this.parsePrice(priceText) ?? this.parsePrice($('body').text());
+      // Önce yapılandırılmış JSON-LD verilerinden fiyatı güvenli bir şekilde çekmeyi dene.
+      // Aksi takdirde, HTML içindeki fiyat etiketlerine veya tüm gövde metnine yönel.
+      const price = this.extractPriceFromJsonLd($) ?? this.parsePrice(priceText) ?? this.parsePrice($('body').text());
 
       if (!price) {
         this.logger.warn(`Price not found for ${url}`);
@@ -86,7 +88,7 @@ export class ScraperService {
       const response = await axios.get<string>(url, this.requestOptions());
       const $ = cheerio.load(response.data);
       const candidates: ProductSearchResult[] = [];
-      const links: Array<{ href: string; name: string; text: string }> = [];
+      const links: Array<{ href: string; name: string; priceText: string }> = [];
 
       $('a').each((_, element) => {
         const anchor = $(element);
@@ -100,7 +102,6 @@ export class ScraperService {
         )
           .replace(/\s+/g, ' ')
           .trim();
-        const price = this.parsePrice(container.text());
 
         if (!href || name.length < 8 || !this.isRelevantProductName(name, query)) {
           return;
@@ -111,11 +112,55 @@ export class ScraperService {
           return;
         }
 
-        links.push({ href: absoluteUrl, name, text: container.text() });
+        // Fiyatı öncelikle sağlayıcının özel seçicilerinden çekmeye çalış.
+        // Grid genelindeki ilk fiyatın yanlışlıkla eşleşmesini önlemek için 
+        // aramayı sırasıyla: 1) linkin kendi içinde, 2) linkin en yakın ata konteynerleri içinde yapıyoruz.
+        let priceText = '';
+        if (provider.selectors && provider.selectors.productPrice) {
+          for (const selector of provider.selectors.productPrice) {
+            // A. Link (anchor) elementinin kendisi fiyatı barındırıyor mu?
+            let priceEl = anchor.find(selector).first();
+            if (priceEl.length > 0) {
+              const textVal = priceEl.text().replace(/\s+/g, ' ').trim();
+              if (textVal) {
+                priceText = textVal;
+                break;
+              }
+            }
+
+            // B. En yakın ata üzerinden ara (komşu kartların fiyatlarıyla çakışmamak için yukarı doğru limitli arama)
+            if (!priceText) {
+              let parent = anchor.parent();
+              let depth = 0;
+              while (parent.length > 0 && depth < 4) {
+                const found = parent.find(selector).first();
+                if (found.length > 0) {
+                  const textVal = found.text().replace(/\s+/g, ' ').trim();
+                  if (textVal) {
+                    priceText = textVal;
+                    break;
+                  }
+                }
+                parent = parent.parent();
+                depth++;
+              }
+              if (priceText) {
+                break;
+              }
+            }
+          }
+        }
+
+        // Eğer seçiciyle bulunamadıysa container metnini kullan
+        if (!priceText) {
+          priceText = container.text();
+        }
+
+        links.push({ href: absoluteUrl, name, priceText });
       });
 
       for (const link of links) {
-        const price = this.parsePrice(link.text);
+        const price = this.parsePrice(link.priceText);
         if (!this.isValidPrice(price)) {
           const snapshot = await this.fetchProductSnapshot(link.href);
           if (!snapshot || !this.isValidPrice(snapshot.price)) {
@@ -218,8 +263,70 @@ export class ScraperService {
     return '';
   }
 
+  private cleanInstallments(text: string): string {
+    let cleaned = text;
+    // 1. "9 x 6.444 TL" veya "9x6.444 TL" gibi çarpım bazlı taksitleri temizle
+    cleaned = cleaned.replace(/\d+\s*x\s*(?:₺\s*)?[0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?\s*(?:TL|TRY|₺)?/gi, '');
+    // 2. "6.444 TL x 9" veya "6.444 TL x9" veya "6.444 TL x 9 Taksit" gibi çarpım bazlı taksitleri temizle
+    cleaned = cleaned.replace(/(?:₺\s*)?[0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?\s*(?:TL|TRY|₺)?\s*x\s*\d+/gi, '');
+    // 3. "Ayda 6.444 TL" veya "Aylık 6.444 TL" kalıplarını temizle
+    cleaned = cleaned.replace(/(?:ayda|aylik)\s*(?:₺\s*)?[0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?\s*(?:TL|TRY|₺)?/gi, '');
+    // 4. "6.444 TL'den başlayan" veya "6.444 TL den baslayan" kalıplarını temizle
+    cleaned = cleaned.replace(/(?:₺\s*)?[0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?\s*(?:TL|TRY|₺)?\s*(?:\'den|den)?\s*(?:baslayan|taksitle)/gi, '');
+    return cleaned;
+  }
+
+  private extractPriceFromJsonLd($: cheerio.CheerioAPI): number | null {
+    let price: number | null = null;
+    $('script[type="application/ld+json"]').each((_, el) => {
+      try {
+        const text = $(el).text();
+        const data = JSON.parse(text);
+        const foundPrice = this.findPriceInObject(data);
+        if (foundPrice) {
+          price = foundPrice;
+          return false; // loop'u sonlandır
+        }
+      } catch (e) {}
+    });
+    return price;
+  }
+
+  private findPriceInObject(obj: any): number | null {
+    if (!obj || typeof obj !== 'object') {
+      return null;
+    }
+    if (obj.price !== undefined && obj.price !== null) {
+      const p = Number(obj.price);
+      if (Number.isFinite(p) && p > 0) {
+        return p;
+      }
+    }
+    if (obj.offers) {
+      if (Array.isArray(obj.offers)) {
+        for (const offer of obj.offers) {
+          const p = this.findPriceInObject(offer);
+          if (p) return p;
+        }
+      } else {
+        const p = this.findPriceInObject(obj.offers);
+        if (p) return p;
+      }
+    }
+    for (const key of Object.keys(obj)) {
+      if (key === 'offers' || key === 'price') continue;
+      const val = obj[key];
+      if (val && typeof val === 'object') {
+        const p = this.findPriceInObject(val);
+        if (p) return p;
+      }
+    }
+    return null;
+  }
+
   private parsePrice(text: string): number | null {
-    const match = text.match(
+    const cleanedText = this.cleanInstallments(text);
+    const match = cleanedText.match(
       /(?:₺\s*([0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?|[0-9]+(?:,[0-9]{1,2})?)|([0-9]{1,3}(?:[.\s][0-9]{3})*(?:,[0-9]{1,2})?|[0-9]+(?:,[0-9]{1,2})?)\s*(?:TL|TRY|₺))/i,
     );
     if (!match) {
@@ -250,7 +357,76 @@ export class ScraperService {
       return false;
     }
 
-    if (!tokens.includes('yenilenmis') && (nameTokens.includes('yenilenmis') || nameTokens.includes('refurbished'))) {
+    // Elemek istediğimiz ikinci el, yenilenmiş, teşhir, outlet kelimeleri
+    const blacklistWords = [
+      'yenilenmis',
+      'refurbished',
+      'outlet',
+      'teshir',
+      'revize',
+      'kullanilmis',
+      'kalite',
+      'yenilio',
+      'easycep',
+      'getmobil'
+    ];
+    for (const word of blacklistWords) {
+      if (!tokens.includes(word) && nameTokens.includes(word)) {
+        return false;
+      }
+    }
+
+    // Aksesuar kelimeleri kontrolü (kılıf, koruyucu vb. ürünlerin telefon/bilgisayar yerine çıkmasını önlemek için)
+    const accessoryWords = [
+      'kilif',
+      'koruyucu',
+      'sarj',
+      'adaptor',
+      'kablo',
+      'kulaklik',
+      'askisi',
+      'cam',
+      'lens',
+      'standi',
+      'kilifi',
+      'cantasi',
+      'canta'
+    ];
+    for (const word of accessoryWords) {
+      if (!tokens.includes(word) && nameTokens.includes(word)) {
+        return false;
+      }
+    }
+
+    // İkinci el ve 2.el kontrolü
+    const hasSecondHandInName =
+      normalizedName.includes('ikinci el') ||
+      normalizedName.includes('ikinciel') ||
+      normalizedName.includes('2 el') ||
+      normalizedName.includes('2.el') ||
+      normalizedName.includes('2. el');
+
+    const queryHasSecondHand =
+      tokens.includes('ikinci') ||
+      tokens.includes('el') ||
+      tokens.includes('ikinciel') ||
+      tokens.includes('2el');
+
+    if (hasSecondHandInName && !queryHasSecondHand) {
+      return false;
+    }
+
+    // Kutusu açık / Açık kutu kontrolü
+    const hasOpenBoxInName =
+      normalizedName.includes('kutusu acik') ||
+      normalizedName.includes('acik kutu');
+
+    const queryHasOpenBox =
+      tokens.includes('kutusu') ||
+      tokens.includes('acik') ||
+      tokens.includes('kutu');
+
+    if (hasOpenBoxInName && !queryHasOpenBox) {
       return false;
     }
 

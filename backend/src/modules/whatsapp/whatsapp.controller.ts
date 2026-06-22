@@ -39,4 +39,10 @@ export class WhatsappController {
 
     return { success: true, data: results };
   }
+
+  @Post('disconnect')
+  async disconnect() {
+    await this.whatsappService.disconnect();
+    return { success: true };
+  }
 }
